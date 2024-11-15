@@ -12,24 +12,36 @@ export const headCount = async () => {
     } catch {
         console.error('Error getting the number of students');
         throw new Error('Failed to find headcount');
-    }
-}
+    };
+};
 
 // Aggregate function for getting the overall grade using $avg
-export const grade = async (studentId: string) =>
-    Student.aggregate([
-        // TODO: Ensure we include only the student who can match the given ObjectId using the $match operator
-    {
-        // Your code here
-      },
-      {
-        $unwind: '$assignments',
-      },
-      // TODO: Group information for the student with the given ObjectId alongside an overall grade calculated using the $avg operator
-      {
-        // Your code here
-      },
-    ]);
+export const grade = async (studentId: string) => {
+    try {
+        const result = await Student.aggregate([
+            // TODO: Ensure we include only the student who can match the given ObjectId using the $match operator
+            {
+                $match: { _id: new ObjectId(studentId) },
+            },
+            {
+                $unwind: '$assignments',
+            },
+            // TODO: Group information for the student with the given ObjectId alongside an overall grade calculated using the $avg operator
+            {
+                $group: {
+                    _id: '$_id',
+                    grade: { $avg: '$assignments.score' },
+                    assignments: { $push: '$assignments' },
+                },
+            },
+        ]);
+        return result.length > 0 ? result[0].grade : 0;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Failed to find grade');
+    }
+};
+
 
 /**
  * GET All Students /students
